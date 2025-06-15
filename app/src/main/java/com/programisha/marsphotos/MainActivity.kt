@@ -10,40 +10,47 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.programisha.marsphotos.ui.theme.MarsPhotosTheme
-import kotlin.random.Random
 
 
 class MainActivity : ComponentActivity() {
@@ -59,32 +66,27 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MarsPhotosScreen(modifier: Modifier = Modifier) {
+fun MarsPhotosScreen(viewModel: MarsViewModel = viewModel(), modifier: Modifier = Modifier) {
+    val marsState by viewModel.marsListState.collectAsStateWithLifecycle()
+    LaunchedEffect(true) {
+        viewModel.generateMore()
+    }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Column {
-            Text(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                text = stringResource(R.string.main_screen_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-
+        Column (modifier = Modifier.padding(innerPadding)){
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                columns = GridCells.Fixed(6),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(32) { i ->
+                itemsIndexed(marsState.items, key = {i, e -> "$i${e.iconId}"}) { i,item ->
                     Card (
                         colors = CardDefaults.cardColors(
                             contentColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        modifier = Modifier.size(100.dp)
+                        modifier = Modifier.size(50.dp).clickable{ viewModel.changeIconId(i) }
                     ) {
-                        GridItemPlaceholder()
+                        GridItemPlaceholder(item)
                     }
                 }
             }
@@ -93,11 +95,12 @@ fun MarsPhotosScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun GridItemPlaceholder(modifier: Modifier = Modifier) {
-    val randomColor = remember { 0xff000000 + Random.nextInt(0xffffff) }
-    Box (modifier = Modifier.background(color = Color(randomColor))) {
+fun GridItemPlaceholder(marsItem: MarsItem, modifier: Modifier = Modifier) {
+    Box (modifier = Modifier.background(color = Color(marsItem.bgColor))) {
         ImagePlaceholder(
-            tint = Color((0xffffffff - randomColor) + 0xff000000),
+            iconId = marsItem.iconId,
+            animationDuration = marsItem.animationDuration,
+            tint = Color(marsItem.fgColor),
             modifier = Modifier
                 .fillMaxSize()
                 .wrapContentSize()
@@ -106,22 +109,35 @@ fun GridItemPlaceholder(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ImagePlaceholder(tint: Color, modifier: Modifier = Modifier) {
-    val randomSpeed = remember { 333 + Random.nextInt(1333) }
+fun ImagePlaceholder(iconId:Int,animationDuration: Int, tint: Color, modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition()
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(randomSpeed, easing = LinearEasing),
+            animation = tween(animationDuration, easing = LinearEasing),
         )
     )
     Icon(
         tint = tint,
         modifier = modifier
-            .rotate(rotation)
+            .graphicsLayer {
+                rotationZ = rotation
+            }
             .scale(1.61f),
-        imageVector = Icons.Default.ThumbUp,
+        imageVector = when(iconId){
+            1 -> Icons.Default.Settings
+            2 -> Icons.Default.Build
+            3 -> Icons.Default.AccountCircle
+            4 -> Icons.Default.FavoriteBorder
+            5 -> Icons.Default.Star
+            6 -> Icons.Default.AddCircle
+            7 -> Icons.Default.Share
+            8 -> Icons.Default.Warning
+            9 -> Icons.Default.Refresh
+            0 -> Icons.Default.Clear
+            else -> Icons.Default.ThumbUp
+        },
         contentDescription = "loading"
     )
 }

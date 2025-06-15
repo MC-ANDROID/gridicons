@@ -4,6 +4,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -37,5 +38,18 @@ class MarsViewModelTest {
         val sizeAfter = viewModel.marsListState.value.items.size
 
         assertTrue(sizeAfter > sizeBefore)
+    }
+
+    @Test
+    fun testChangeIconId() = runTest(unconfinedTestDispatcher){
+        viewModel.generateMore()
+
+        val pos = 4
+        val iconId = viewModel.marsListState.value.items[pos]
+        viewModel.changeIconId(pos)
+        val changedIconId = viewModel.marsListState.value.items[pos]
+
+        assertNotEquals(iconId,changedIconId)
+
     }
 }
