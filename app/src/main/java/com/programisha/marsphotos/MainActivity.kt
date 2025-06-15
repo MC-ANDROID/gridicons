@@ -6,9 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateInt
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -87,6 +91,7 @@ private const val MIN_ITEMS_BELOW_BOTTOM_TO_LOAD_MORE = 100
 fun MarsPhotosScreen(viewModel: MarsViewModel = viewModel(), modifier: Modifier = Modifier) {
     val marsState by viewModel.marsListState.collectAsStateWithLifecycle()
     var itemsNumber by remember { mutableIntStateOf(0) }
+
     LaunchedEffect(true) {
         viewModel.generateMore()
     }
