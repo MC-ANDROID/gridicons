@@ -1,6 +1,7 @@
 package com.programisha.marsphotos
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AddCircle
@@ -42,15 +44,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.programisha.marsphotos.ui.theme.MarsPhotosTheme
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 
 
 class MainActivity : ComponentActivity() {
@@ -65,6 +73,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private const val MIN_ITEMS_BELOW_BOTTOM_TO_LOAD_MORE = 100
+
 @Composable
 fun MarsPhotosScreen(viewModel: MarsViewModel = viewModel(), modifier: Modifier = Modifier) {
     val marsState by viewModel.marsListState.collectAsStateWithLifecycle()
@@ -73,18 +83,38 @@ fun MarsPhotosScreen(viewModel: MarsViewModel = viewModel(), modifier: Modifier 
     }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column (modifier = Modifier.padding(innerPadding)){
+            val listState = rememberLazyGridState()
+            LaunchedEffect(listState) {
+                snapshotFlow { listState.firstVisibleItemIndex }
+                    .map { index ->
+                        val loadMoreLimit = (listState.layoutInfo.totalItemsCount - listState.layoutInfo.visibleItemsInfo.size) -
+                                             MIN_ITEMS_BELOW_BOTTOM_TO_LOAD_MORE
+                        index >= loadMoreLimit
+                    }.filter { it }
+                    .collect {
+                        viewModel.generateMore()
+                    }
+            }
             LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
+                state = listState,
+                columns = GridCells.Fixed(4),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.semantics{ contentDescription = "grid of icons" }
             ) {
-                itemsIndexed(marsState.items, key = {i, e -> "$i${e.iconId}"}) { i,item ->
+                itemsIndexed(marsState.items, key = {i, e -> "$i${e.iconId}" }) { i,item ->
                     Card (
                         colors = CardDefaults.cardColors(
                             contentColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        modifier = Modifier.size(50.dp).clickable{ viewModel.changeIconId(i) }
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable { viewModel.changeIconId(i) }
+                            .semantics{
+                                Log.i("Mars","grid item $i")
+                                contentDescription = "grid item $i"
+                            }
                     ) {
                         GridItemPlaceholder(item)
                     }
