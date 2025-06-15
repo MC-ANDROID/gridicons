@@ -16,4 +16,6 @@ Tests - [MarsViewModelTest.kt](app/src/test/java/com/programisha/marsphotos/Mars
 
 UI Tests - [MarsScreenTest.kt](app/src/androidTest/java/com/programisha/marsphotos/MarsScreenTest.kt)
 
-![screen1](https://github.com/user-attachments/assets/64fd18c5-c8e2-4aae-9ce0-b240cece544a)
+## Screenshot
+
+<img src="https://github.com/user-attachments/assets/64fd18c5-c8e2-4aae-9ce0-b240cece544a" width=250 >
