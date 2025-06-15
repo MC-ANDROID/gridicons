@@ -14,7 +14,7 @@ import kotlin.random.Random
 
 private const val ICON_ID_MAX = 10
 private const val GENERATE_MORE_AMOUNT = 100
-private const val RPS_MAX = 555
+private const val RPS_MAX = 766
 private const val RPS_MIN = 4444
 
 
@@ -48,10 +48,10 @@ class MarsViewModel(
     }
 
     private fun invertColor(color: Int): Int {
-        val r = 255 - ((color shr 16) and 0xFF)
-        val g = 255 - ((color shr 8) and 0xFF)
-        val b = 255 - (color and 0xFF)
-        return (r shl 16) or (g shl 8) or b
+        val r = ((color shr 16) and 0xFF)
+        val g = ((color shr 8) and 0xFF)
+        val b = (color and 0xFF)
+        return ((r+0xff/2)%0xff shl 16) or ((g+0xff/2)%0xff shl 8) or (b+0xff/2)%0xff
     }
 
     private fun generateRandomIconId() = Random.nextInt(ICON_ID_MAX)

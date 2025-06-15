@@ -38,12 +38,19 @@ import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -75,15 +82,38 @@ class MainActivity : ComponentActivity() {
 
 private const val MIN_ITEMS_BELOW_BOTTOM_TO_LOAD_MORE = 100
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarsPhotosScreen(viewModel: MarsViewModel = viewModel(), modifier: Modifier = Modifier) {
     val marsState by viewModel.marsListState.collectAsStateWithLifecycle()
+    var itemsNumber by remember { mutableIntStateOf(0) }
     LaunchedEffect(true) {
         viewModel.generateMore()
     }
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Column (modifier = Modifier.padding(innerPadding)){
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("items #${itemsNumber}")
+                }
+            )
+        },
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)) {
             val listState = rememberLazyGridState()
+            LaunchedEffect(listState) {
+                snapshotFlow { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size}
+                    .distinctUntilChanged()
+                    .collect {
+                        itemsNumber = it
+                    }
+
+            }
             LaunchedEffect(listState) {
                 snapshotFlow { listState.firstVisibleItemIndex }
                     .map { index ->
@@ -111,8 +141,7 @@ fun MarsPhotosScreen(viewModel: MarsViewModel = viewModel(), modifier: Modifier 
                         modifier = Modifier
                             .size(50.dp)
                             .clickable { viewModel.changeIconId(i) }
-                            .semantics{
-                                Log.i("Mars","grid item $i")
+                            .semantics {
                                 contentDescription = "grid item $i"
                             }
                     ) {
@@ -154,6 +183,30 @@ fun ImagePlaceholder(iconId:Int,animationDuration: Int, tint: Color, modifier: M
             .graphicsLayer {
                 rotationZ = rotation
             }
+            .scale(1.61f),
+        imageVector = when(iconId){
+            1 -> Icons.Default.Settings
+            2 -> Icons.Default.Build
+            3 -> Icons.Default.AccountCircle
+            4 -> Icons.Default.FavoriteBorder
+            5 -> Icons.Default.Star
+            6 -> Icons.Default.AddCircle
+            7 -> Icons.Default.Share
+            8 -> Icons.Default.Warning
+            9 -> Icons.Default.Refresh
+            0 -> Icons.Default.Clear
+            else -> Icons.Default.ThumbUp
+        },
+        contentDescription = "loading"
+    )
+}
+
+
+@Composable
+fun ImagePlaceholderNoAnimation(iconId:Int,animationDuration: Int, tint: Color, modifier: Modifier = Modifier) {
+    Icon(
+        tint = tint,
+        modifier = modifier
             .scale(1.61f),
         imageVector = when(iconId){
             1 -> Icons.Default.Settings
